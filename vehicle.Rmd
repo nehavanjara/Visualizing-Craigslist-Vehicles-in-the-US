@@ -1,0 +1,464 @@
+---
+title: "Exam"
+author: "Neha Manish Vanjara"
+date: "2022-08-05"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+# INTRODUCTION
+
+Americans rely on their automobiles for mobility; 91 percent of working adults commute
+to work in their cars, and cars offer a level of convenience that is frequently unsurpassed
+by other modes of transit. Purchasing a secondhand car may be exciting, whether you're 16
+or 60. The average cost of a used car, according to some industry statistics, is close to
+$28,000, so it may also be a significant financial commitment. The overall number of 
+registered vehicles in the United States is consistently rising year over year. Over 
+six years, from 2014 to 2019, growth was constant. Approximately 260 million automobiles
+were registered in 2014, but by 2019, that figure had risen to over 276 million.
+
+Do your research before visiting an auto dealer to look at used cars. You might actually 
+save a lot of money. Take into account your budget, the type of car you require, and how 
+you plan to utilize it. Don't forget about other expenses like registration, insurance, 
+gas, and upkeep. Examine models, features, maintenance history, safety evaluations, and 
+mileage. The used automobile listing utilized in the vehicle data set was found on 
+Craigslist and includes columns for price, condition, manufacturer, latitude/longitude, 
+and 18 other characteristics. We may also find information about each data set column in
+the data profiling report. Numerous uses for this data exist, including price prediction.
+
+# ABOUT CRAIGSLIST
+
+Car purchase on Craigslist could result in significant savings on a pricey investment. 
+On Craigslist, several vehicles are for sale. People can narrow down their search results
+to make it easier to identify the type of automobile they desire and the price range they
+can afford. They can look at the pictures if a car listing gets their attention. The 
+listing includes information on the vehicles' year, make, model, and trim.
+
+In this report I'm going to visualize these listings based on the above mentioned parameters.
+
+# AIM
+
+1. Which car(manufacturer) has the highest number of listing on Craigslist?
+2. What is the highest listing of different cars based on state?
+3. Exploring top 5 States Manufacturer wise.
+4. Figuring the kind of car somebody needs.
+5. What is the price for different brand cars?
+
+
+# CONTEXT
+
+Tools and techniques for data visualization assist uncover patterns and trends that are
+hidden beneath mountains of complex data, and data visualization results in better and
+quicker judgments.
+
+This data set can be used by people around the US to study and predict future car sales.
+It explains the actual price, how to choose an automobile, and how to assess the car's 
+condition. It even displays the most typical automobile model per state. The common 
+characteristics and status of autos can be discovered by researchers.
+
+
+# THE DATA SET
+
+The vehicle data set has 26 columns and 426880 rows. Each row represents an entry for
+a used car.The Data Set also has many missing values in each row.
+
+
+# TIDYING THE DATA SET
+
+No data set is flawless, and missing values are frequently found in data sets. Since
+Craigslist ads allow for a lot of flexibility, several fields—including those for the
+condition, odometer, size, paint color, and cylinders—have blank values. When we look 
+more closely, we see that most of the columns have multiple null entries. Either we can 
+proceed by learning how to estimate these numbers, or we may do away with the rows 
+altogether. There are missing values for several factors, including condition, odometer,
+size, paint color, and cylinders. Since none of the columns have any values and there 
+are zero rows as a result, we are unable to use omit.na(). I've taken out any missing 
+rows from the particular visualization to avoid this.
+
+
+# LOADING THE PACKAGE
+
+```{r Loading the required packages}
+packages <-
+  c(
+    "tidyverse",
+    "janitor",
+    "data.table",
+    "devtools",
+    "ggmap",
+    "viridis",
+    "lubridate",
+    "reshape",
+    "ggplot2",
+    "wordcloud",
+    "knitr",
+    "rworldmap",
+    "rworldxtra",
+    "dplyr",
+    "tidyr",
+    "kableExtra"
+  )
+for (package in packages) {
+  library(package, character.only = TRUE)
+}
+```
+
+# LOADING THE DATA SET
+
+```{r Loading_data}
+vehicle<-fread("vehicles.csv") # data set
+dim(vehicle) #calculating rows and columns 
+```
+
+# VISUALIZING THE DATA SET 
+
+```{r }
+#1 Counting number of vehicles using manufacture
+
+Manufacture_count <- vehicle %>% group_by(manufacturer) %>% count(sort = TRUE)
+Manufacture_count <- Manufacture_count[-8, ] # omitting row 8 as it has missing value
+Manufacture_count
+Manufacture_count1 <- Manufacture_count[1:10,]
+manufacture <- ggplot(Manufacture_count1, aes(x=manufacturer ,y=n, fill = n))+
+  geom_bar(stat = "identity") + labs(x="Manufacturer",y="Count") + 
+  ggtitle("Listing of cars from various Manufacture")+
+  theme(plot.title = element_text(color="black", size=14, face="bold"),
+    axis.title.x = element_text(color="black", size=14),
+    axis.title.y = element_text(color="black", size=14)) + 
+  theme(plot.title=element_text(hjust=0.5))
+manufacture
+
+```
+
+
+We can see from the above bar graph that Ford has the most car listings in the United States.
+There are more than 70000 Ford vehicles listed on Craigslist. This indicates that the majority 
+of Americans favor Ford automobiles. Toyota is listed second on the list after Chevrolet, 
+which has almost 50000 listings.
+
+
+```{r }
+#2 Listings of manufacturer based on various state 
+
+State_Manufacturer_count <- vehicle %>% group_by(state , manufacturer) %>% 
+  count(sort = TRUE)
+State_Manufacturer_count
+
+```
+
+```{r}
+#3 Heatmap for top 5 States Manufacturer wise
+
+heatmap<- select(vehicle, state , manufacturer)
+xtabA<- filter(heatmap,
+                     manufacturer %in%c('ford','chevroet','toyota','honda',
+                                        'nissan',	'mercedes-benz','bmw'))
+xtabA<- filter(xtabA, state %in%c('ca','fl','tx','mi','or'))
+p<-table(xtabA$state,xtabA$manufacturer)
+data_melt <- melt(p)
+xc<-ggplot(data_melt,aes(x=Var.1,y=Var.2))+geom_tile(aes(fill=value))+
+  scale_fill_gradient(low="yellow",high="blue")
+xc+ggtitle("Heatmap for top 5 States Manufacturer wise: ")+xlab("State")+
+  ylab("Manufacturer")+theme(
+  plot.title = element_text(color="black", size=14, face="bold"),
+  axis.title.x = element_text(color="black", size=14),
+  axis.title.y = element_text(color="black", size=14)
+) + theme(plot.title=element_text(hjust=0.5))
+
+```
+
+
+The heatmap and table illustrate the various US states and manufacturers. Most postings are 
+in the blue-represented areas, while the fewest are in the yellow-represented ones. It provides information on the number of cars from various manufacturers in various states. We can see from 
+the data that California has a significant number of Ford vehicles listed. Ford is the market
+leader in Florida, Texas, and Michigan. Compared to other states, California has a tremendous 
+number of cars, which may be a result of its large population. Since California has a population
+that is 24.9% higher than Texas, there are more listings for cars there.
+
+
+```{r}
+#4 Cloud Image of Manufacturer in CA
+
+cloud<-filter(vehicle,state%in%c('ca'))
+cloud<-select(cloud,state,type)
+cloud <- cloud %>% group_by(type)%>% summarise(Count = n()) %>% arrange(desc(Count))
+wordcloud(words=cloud$type,freq = cloud$Count,scale=c(4,.5),
+          max.words=100,rot.per=.5,colors=palette())
+
+```
+
+
+
+According to the cloud maps, California is the state where sedans are most frequently listed.
+Drivers in Southern California who frequently face challenging commutes and challenging parking situations should consider sedans as a practical option. This demonstrates the necessity of 
+owning a sedan.
+
+
+```{r }
+#5 Listing of car over the years
+Year_count <- vehicle %>% group_by(year) %>% count(sort = TRUE)
+Year_count
+b<- ggplot(Year_count, aes(x=year)) +
+  geom_line( mapping = aes(y=n, group =1),color="red") + 
+  ggtitle("Listing of car over the years")+theme(
+    plot.title = element_text(color="black", size=14, face="bold")) +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  theme(plot.title=element_text(hjust=0.5))
+b
+
+```
+
+
+
+This line graph shows that the number of automobile listings has grown over time. This is 
+closely related to the production and use of automobiles. Even the decline of 2007–2008 is 
+visible. The economic disruption that resulted in trade imbalances was accelerated by the 
+recession of 2007–2008. One-fifth of the fall in auto sales can be attributed to the over 
+50 percent increase in oil costs in the years 2007–2008. People also believed that wealth
+was declining as a result of the reduction in housing prices. The graph above demonstrates 
+the fact that 2012 saw another recession. Once more, we observe a decline around 2012.
+
+
+
+```{r }
+#6 Number of manufacturer color wise
+
+vehicle1 <- vehicle %>% filter(manufacturer %in% c("ford","chevrolet",
+                      "toyota","honda","nissan",
+                      "jeep","volvo","audi"))
+
+c_count <- vehicle1 %>% group_by(manufacturer, paint_color) %>% count(sort = TRUE)
+c_count <- c_count[!(c_count$paint_color == ""), ]
+c_count
+c <- ggplot(c_count, aes(x=manufacturer ,y=n, fill = paint_color))+
+  geom_bar(stat = "identity") + labs(x="Manufacture Type",y=" Paint Count") + 
+  ggtitle("Sales of different manufacturer color wise ")+
+  theme(plot.title = element_text(color="black", size=14, face="bold"),
+        axis.title.x = element_text(color="black", size=14),
+        axis.title.y = element_text(color="black", size=14)) + 
+  theme(plot.title=element_text(hjust=0.5))
+c
+```
+
+
+Regardless of the manufacturer type, the Statistic Plot in this case reveals that white 
+is the most popular paint color (aside from missing values). This indicates that individuals
+prefer to drive white automobiles. Black is the second most popular listing color. We are 
+aware that these two colors of cars are the most popular and basic.
+
+
+
+```{r }
+#7 Number of manufacturer fuel wise
+
+f_count <- vehicle1 %>% group_by(manufacturer, fuel) %>% count(sort = TRUE)
+f_count <- f_count[!(f_count$fuel == ""), ]
+f_count
+d <- ggplot(f_count, aes(x=manufacturer ,y=n, fill = fuel))+
+  geom_bar(stat = "identity") + labs(x="Manufacture Type",y="Fuel Count") + 
+  ggtitle(" Number of manufacturer fuel wise ")+
+  theme(plot.title = element_text(color="black", size=14, face="bold"),
+        axis.title.x = element_text(color="black", size=14),
+        axis.title.y = element_text(color="black", size=14)) + 
+  theme(plot.title=element_text(hjust=0.5))
+d
+```
+
+
+The graph above shows that gas is the most popular fuel type. All car models use gas as their
+main fuel. The cost of gas is clearly to blame for this. The cost of gas is significantly 
+lower than that of other fuels.
+
+
+```{r }
+#8 Cylinder Count for the vehicles
+
+Cylinder_count <- vehicle %>% group_by(cylinders) %>% count(sort = TRUE)
+
+Cylinder_count <- Cylinder_count[!(Cylinder_count$cylinders == ""), ]
+Cylinder_count
+cylinder <- ggplot(Cylinder_count, aes(x=cylinders ,y=n, fill = n))+
+  geom_bar(stat = "identity") + labs(x="Cyclinder",y="Count") +  coord_flip() +
+  ggtitle("Cylinder Count for the vehicles")+
+  theme(plot.title = element_text(color="black", size=14, face="bold"),
+        axis.title.x = element_text(color="black", size=14),
+        axis.title.y = element_text(color="black", size=14)) + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) +
+  theme(plot.title=element_text(hjust=0.5))
+cylinder + scale_fill_viridis(option = "C")
+```
+
+
+The most prevalent type of cylinder, according to this graph, is type 6. Type 4 and type 
+8 come after this type. We can observe from the bar plot above that the bulk of modern 
+cars is powered by 4, 5, 6, or 8-cylinder engines.
+
+
+```{r }
+#9 Condition of different listed cars
+
+con_count <- vehicle1 %>% group_by(manufacturer, condition) %>% count(sort = TRUE)
+con_count <- con_count[!(con_count$condition == ""), ]
+
+ab <- ggplot(con_count, aes(x=manufacturer ,y=n, fill = condition))+
+  geom_bar(stat = "identity") + labs(x="Manufacture Type",y=" Condition Count") + 
+  ggtitle(" Condition of different listed cars")+
+  theme(plot.title = element_text(color="black", size=14, face="bold"),
+        axis.title.x = element_text(color="black", size=14),
+        axis.title.y = element_text(color="black", size=14)) + 
+  theme(plot.title=element_text(hjust=0.5))
+ab
+```
+
+
+The vast majority of the vehicles that are offered on Craigslist are in good shape. As a result,
+it is a convenient and safe website for used automobile buyers. We can observe that very few automobiles are in salvageable condition. Even now, there are relatively few new cars on the 
+road, and most individuals will keep the vehicles they recently purchased.
+
+
+```{r }
+#10 Various Size of cars for sale
+
+size_count <- vehicle1 %>% group_by(manufacturer, size) %>% count(sort = TRUE)
+size_count <- size_count[!(size_count$size == ""), ]
+
+abc <- ggplot(size_count, aes(x=manufacturer ,y=n, fill = size))+
+  geom_bar(stat = "identity") + labs(x="Manufacture Type",y=" Size Count") + 
+  ggtitle(" Various Size of cars for sale ")+
+  theme(plot.title = element_text(color="black", size=14, face="bold"),
+        axis.title.x = element_text(color="black", size=14),
+        axis.title.y = element_text(color="black", size=14)) + 
+  theme(plot.title=element_text(hjust=0.5))
+abc + scale_fill_brewer()
+```
+
+
+In this instance, we can see that Americans prefer full-size cars. Mid-size cars are the 
+second most popular. Many people, notably contractors, who need larger pickup trucks for 
+their jobs own them. However, just as many people also utilize these larger cars to transport 
+their families. Because the nation's roads and transportation system have expanded to 
+accommodate them, Americans now purchase larger cars.
+
+
+```{r }
+#11 Price Chart of number of cars
+
+p_count <- vehicle %>% group_by(price) %>% count(sort = TRUE)
+p_count <- p_count[!(p_count$price == ""), ]
+p_count
+p_count$price  <- as.integer(p_count$price)
+e <- ggplot(p_count, aes(x=price ,y=n))+
+  geom_point(size=2, aes(colour= n )) + labs(x="Price",y="No. of Cars") + 
+  ggtitle("Price Chart of number of Cars")+
+  theme(plot.title = element_text(color="black", size=14, face="bold"),
+        axis.title.x = element_text(color="black", size=14),
+        axis.title.y = element_text(color="black", size=14)) + xlim(2000,50000) +
+  theme(plot.title=element_text(hjust=0.5))
+e + scale_color_viridis(option = "H")
+
+```
+
+
+Here, I have used a scatter plot to try to visualize. This demonstrates a correlation between
+pricing and the number of cars listed. More cars are being sold for less, as can be seen. This clearly demonstrates that fewer autos are listed as prices rise. People like to purchase cars 
+at a lower cost, thus they go for used vehicles. People won't opt to spend more money on used 
+autos.
+
+
+```{r }
+#12 Price Chart of number of Car
+
+mp_count <- vehicle1 %>% group_by(manufacturer, price) %>% count(sort = TRUE)
+mp_count
+mp_count <- mp_count[!(mp_count$price == "0"), ]
+mp_count$price  <- as.integer(mp_count$price)
+mp_count
+f <- ggplot(mp_count, aes(x=manufacturer, y=price , fill= manufacturer)) +
+  geom_boxplot() + labs(x="Price",y="No. of Cars") + 
+  ggtitle("Price Chart of number of Cars")+
+  theme(plot.title = element_text(color="black", size=14, face="bold"),
+        axis.title.x = element_text(color="black", size=14),
+        axis.title.y = element_text(color="black", size=14)) + ylim(1000,70000) +
+  theme(plot.title=element_text(hjust=0.5))
+
+f
+```
+
+
+A boxplot of a few cars with a variety in price is shown here. Even while we are aware that
+Ford sells more automobiles overall, the average number of cars mentioned is practically 
+identical to that of Audi, despite the latter's lower listing. It is based solely on the cost 
+as shown in the graph above. Nissan and Honda vehicles are very scarce, despite the fact that 
+their price range is not very high.
+
+
+# CONCLUSION
+
+After thorough analysis of the data set, we were successful in making reasonable conclusions regarding the sale trends in used cars and automobile industry generally. From the above visualizations we observe that on the Craigslist listings, the highest number of car listed 
+is from the brand Ford. This could be due to various reasons which we see later in the report.
+Ford is among the companies looking to offer a range of transportation services, rather than 
+simply producing and selling cars. Then from the heatmap analysis of 5 highest manufacturer states
+we can see that California has the highest number of listings. Moreover, from our above analysis
+we can even see that California has Ford listings in the top followed by Toyota. We can see that
+from the table as well. A fair reason would be that inn California, a state that is generally more expensive to live in, the purchase of a car has to be made a lot more thoughtfully than many mid-western states where car ownership is a lot cheaper. All the cars in California’s top 10 are fuel efficient sedans or hatchbacks and this is stated by the cloud image from our visualization.
+
+We notice a fall in the listings in the year 2007-2008. Automobiles faced one of the hardest-hit during the recession. It was affected by two things:
+1. Increase in the oil price(negative relationship between oil prices and auto sales).
+2. Impact of the decline in home prices on auto sales.
+
+From the next 5 bar graphs we can gather alot of information about buying a used car from Craigslist.
+These graphs gives us details for each many column in the dataset.For example the most popular paint colour (apart from missing values), is white. I was able to predict price of a car given the state it is being sold in , its type , title, drive, mileage and condition. From those graphs a person looking for a used car can see that they should go for a Ford car and specifically a white one from the graphs. Statistic shows that most of the people go for gas type fuel and 6 litre cyclinder. Majority of the modern cars have 4,6 and 8 litre cyclinder installed in them. Craigslist is a trsutworthy website and hence most of the available cars is in excellent condition. 
+
+The price chart for cars shows us that most of the listed cars are in a reasonable range. The number of cars listed and their prices are directly proportional. There are very few cars in high range and it is because people are trying  to find cheaper options and that is the reason they're looking for second hand cars. Different brand cars have different prices. Even though Ford and Chevrolet are the most listed cars, the mean price of other top end cars such as audi, volvo is almost same.
+
+I was somewhat successful in giving a general idea but because of limitations of time and data set we still have a long way to go.
+
+# SUMMARY
+
+1. Downloaded the data set and performed cleaning operations.
+2. Transformed the data set as required while answering certain questions.
+3. Analysed data set at various levels and tried to identify some interesting trends.
+4. Looked into the reasons for the trends observed.
+
+# FUTURE WORK
+
+1. Perform a similar analysis using a similar dataset of another country.
+2. Draw a comparison between the trends seen in the two countries.
+3. Make use of the few columns left unused in this analysis.
+
+# DATA DICTIONARY
+
+ Mentioned below are the columns essential to our analysis.
+
+1.  manufacturer: Make of the vehicle listed.
+2.  price: Asking price for the vehicle in the listing.
+3.  state: State code of where the listing is made.
+4.  year :Year of registration of the vehicle listed.
+5.  condition: Condition of the vehicle listed.
+6.  cylinders: Engine size, based on the number of cylinders it has.
+7.  size: Which size category the vehicle falls in.
+8.  lat: Latitude of from where the listing is made.
+9.  long: Longitude of from where the listing is made.
+10. region: Region from where the listing is made.
+11. model: Model name of the vehicle listed.
+12. odometer: The number of miles on the odometer of the vehicle.
+13. type: Separates the vehicles on the basis of their type, eg. Hatchback, Pickup, Sedan etc.
+14. transmission: Varied types of transmission are given.
+
+
+# TYPES OF GRAPHS VISUALIZED
+
+1. Bar Plot
+2. Scatter Plot
+3. Box Plot
+4. Line Graph
+5. Heatmaps
+6. cloud Image
+7. Statistic Plot
+
+
+```{r}
+sessionInfo()
+```
